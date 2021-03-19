@@ -30,11 +30,6 @@ function readRegistryKey(hive, key, name) {
   }
 }
 
-function findUnityModManager() {
-  return readRegistryKey('HKEY_CURRENT_USER', 'Software\\UnityModManager', 'Path')
-    .then(value => fs.statAsync(path.join(value, UMM_DLL)));
-}
-
 function findGame() {
   return util.steam.findByAppId(STEAM_ID.toString())
     .then(game => game.gamePath)
@@ -47,37 +42,8 @@ function findGame() {
 }
 
 function prepareForModding(discovery) {
-  const showUMMDialog = () => new Promise((resolve, reject) => {
-    _API.store.dispatch(actions.showDialog('question', 'Action required',
-      {
-        message: 'Most Dawn of Man mods require Unity Mod Manager to be installed to run correctly.\n'
-               + 'Once installed, UMM must be used to inject your mods into the game itself.\n'
-               + 'For ease of use, UMM comes pre-added as a tool for Dawn of Man but you may have\n'
-               + 'to configure it manually.\n'
-               + 'For usage information and download link please see UMM\'s page.\n\n'
-               + 'Please note: simpler "Scenario" mods can be used without UMM.'
-      },
-      [
-        { label: 'Continue', action: () => resolve() },
-        { label: 'More on Vortex Tools', action: () => {
-          util.opn('https://wiki.nexusmods.com/index.php/Category:Tool_Setup')
-            .then(() => showUMMDialog())
-            .catch(err => undefined);
-          resolve();
-        }},
-        { label: 'Go to UMM page', action: () => {
-          util.opn('https://www.nexusmods.com/site/mods/21/').catch(err => undefined);
-          // We want to go forward even if UMM is not installed as the scenario modType
-          //  can be installed without UMM.
-          resolve();
-        }},
-      ]));
-  });
-
   return fs.ensureDirWritableAsync(getSceneFolder(), () => Promise.resolve())
     .then(() => fs.ensureDirWritableAsync(path.join(discovery.path, 'Mods'), () => Promise.resolve()))
-    .then(() => findUnityModManager()
-      .catch(err => showUMMDialog()));
 }
 
 function endsWithPattern(instructions, pattern) {
@@ -149,7 +115,7 @@ function testMod(files, gameId) {
 
 function main(context) {
   _API = context.api;
-  context.requireExtension('modtype-umm');
+  context.requireExtension('modtype-bepinex');
   context.registerGame({
     id: GAME_ID,
     name: 'Dawn of Man',
@@ -176,6 +142,19 @@ function main(context) {
 
   context.registerInstaller('dom-scene-installer', 25, testSceneMod, installSceneMod);
   context.registerInstaller('dom-mod', 25, testMod, installMod);
+
+  context.once(() => {
+    if (context.api.ext.bepinexAddGame !== undefined) {
+      context.api.ext.bepinexAddGame({
+        gameId: GAME_ID,
+        autoDownloadBepInEx: true,
+        doorstopConfig: {
+          doorstopType: 'default',
+          ignoreDisableSwitch: true,
+        }
+      })
+    }
+  })
 }
 
 module.exports = {
