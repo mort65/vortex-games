@@ -7,7 +7,7 @@ const GAME_NAME = 'Elden Ring';
 const GAME_EXE = 'eldenring.exe';
 const STEAM_APP_ID = '1245620';
 const MOD_DIR = 'game';
-const EXEC_PATH = path.join('game', GAME_EXE);
+const EXEC_PATH = path.join(MOD_DIR, GAME_EXE);
 const MOD_PATH = path.join('.',MOD_DIR);
 
 // List of folders that, if present in a mod archive, determine the root dir.
@@ -54,7 +54,7 @@ function main(context) {
     queryPath: findGame,
     queryModPath: () => MOD_PATH,
     logo: 'gameart.jpg',
-    executable: () => GAME_EXE,
+    executable: () => EXEC_PATH,
     requiredFiles: [
       EXEC_PATH,
     ],
