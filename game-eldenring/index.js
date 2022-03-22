@@ -1,21 +1,26 @@
 const Promise = require('bluebird');
 const path = require('path');
-const { fs, log, util } = require('vortex-api');
+const { log, util } = require('vortex-api');
+const winapi = require('winapi-bindings');
 
 const GAME_ID = 'eldenring';
 const GAME_NAME = 'Elden Ring';
 const GAME_EXE = 'eldenring.exe';
 const STEAM_APP_ID = '1245620';
-const MOD_DIR = 'game';
-const EXEC_PATH = path.join(MOD_DIR, GAME_EXE);
-const MOD_PATH = path.join('.',MOD_DIR);
-
-// List of folders that, if present in a mod archive, determine the root dir.
-const TOP_LEVEL_MOD_FOLDERS = [MOD_DIR];
+const TOP_DIR = 'game';
+const EXEC_PATH = path.join(TOP_DIR, GAME_EXE);
 
 function findGame() {
   return util.steam.findByAppId([STEAM_APP_ID])
-    .then(game => game.gamePath);
+    .then(game => game.gamePath)
+	.catch(() => {
+      // Try finding the game from registery
+      const instPath = winapi.RegGetValue('HKEY_LOCAL_MACHINE',
+        'SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\ELDEN RING_is1',
+        'InstallLocation');
+      if (!erPath) throw new Error('empty registry key');
+      return Promise.resolve(instPath.value);
+    });
 }
 
 async function testSupportedContent(files, gameId) {
@@ -23,27 +28,30 @@ async function testSupportedContent(files, gameId) {
   return { supported, requiredFiles: [] };
 }
 
-// Try to locate one of the top-level mod directories and set its containing folder as the root dir.
-// If there are no top-level mod directories in the archive, the archive root is the root dir.  
+// Try to locate the top-level mod directory and set its containing folder as the root dir.
+// If there is no top-level mod directory in the archive, the archive root is the root dir.  
 async function installContent(files) {
-  const modDirPath = files.find(file => TOP_LEVEL_MOD_FOLDERS.some(folder => path.basename(file) === folder));
-  const modDir = modDirPath ? modDirPath : ''
-  const modDirName = path.basename(modDir);
-  const idx = modDir ? modDir.indexOf(modDirName) + (modDirName).length : 0; //start index of the root-relative path
-  const rootDir = idx ? modDir : ''; // root dir of the archive
+  const topDirPath = files.find(file => path.basename(file) === TOP_DIR);
+  const topDir = topDirPath ? topDirPath : ''
+  const topDirName = path.basename(topDir);
+  const idx = topDir ? topDir.indexOf(topDirName) + (topDirName).length : 0; //start index of the root-relative path
+  const rootDir = idx ? topDir : ''; // root dir of the archive
   const instructions = files
     .filter(file => !file.endsWith(path.sep)     // exclude directories
                     && file.startsWith(rootDir)) // include only files in the root dir
     .map(file => {
-      log('info', `Installing file: ${file.substr(idx)}`);
-      return {
-        type: 'copy',
-        source: file,
-        destination: file.substr(idx), // root-relative path
-      };
+		if (file===path.basename(file))
+		{
+			file = '.' + path.sep + path.basename(file); //Prevents the installation of dinput,end,.. mod types in ELDEN RING instead of ELDEN RING\games for now.  
+		}
+		log('info', `Installing file: ${file.substr(idx)}`);
+		return {
+			type: 'copy',
+			source: file,
+			destination: file.substr(idx), // root-relative path
+		};
     });
-
-  return { instructions };
+	return { instructions };
 }
 
 function main(context) {
@@ -52,7 +60,7 @@ function main(context) {
     name: GAME_NAME,
     mergeMods: true,
     queryPath: findGame,
-    queryModPath: () => MOD_PATH,
+    queryModPath: () => TOP_DIR,
     logo: 'gameart.jpg',
     executable: () => EXEC_PATH,
     requiredFiles: [
