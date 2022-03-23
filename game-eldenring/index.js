@@ -18,7 +18,7 @@ function findGame() {
       const instPath = winapi.RegGetValue('HKEY_LOCAL_MACHINE',
         'SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\ELDEN RING_is1',
         'InstallLocation');
-      if (!erPath) throw new Error('empty registry key');
+      if (!instPath) throw new Error('empty registry key');
       return Promise.resolve(instPath.value);
     });
 }
@@ -31,14 +31,14 @@ async function testSupportedContent(files, gameId) {
 // Try to locate the top-level mod directory and set its containing folder as the root dir.
 // If there is no top-level mod directory in the archive, the archive root is the root dir.  
 async function installContent(files) {
-  const topDirPath = files.find(file => path.basename(file) === TOP_DIR);
-  const topDir = topDirPath ? topDirPath : ''
+  const topDirPath = files.find(file => path.basename(file).toLowerCase() === TOP_DIR);
+  const topDir = topDirPath ? topDirPath.toLowerCase() : ''
   const topDirName = path.basename(topDir);
   const idx = topDir ? topDir.indexOf(topDirName) + (topDirName).length : 0; //start index of the root-relative path
   const rootDir = idx ? topDir : ''; // root dir of the archive
   const instructions = files
     .filter(file => !file.endsWith(path.sep)     // exclude directories
-                    && file.startsWith(rootDir)) // include only files in the root dir
+                    && file.toLowerCase().startsWith(rootDir)) // include only files in the root dir
     .map(file => {
 		if (file===path.basename(file))
 		{
