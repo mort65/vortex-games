@@ -79,7 +79,7 @@ function main(context) {
     mergeMods: true,
     queryPath: findGame,
     supportedTools: tools,
-    queryModPath: () => 'data',
+    queryModPath: () => 'Data',
     logo: 'gameart.jpg',
     executable: () => 'oblivion.exe',
     requiredFiles: [
@@ -91,6 +91,9 @@ function main(context) {
     },
     details: {
       steamAppId: 22330,
+      hashFiles: [
+        'Data/Oblivion.esm'
+      ],
     },
   });
   return true;

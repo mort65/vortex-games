@@ -3,6 +3,13 @@ const path = require('path');
 const { util } = require('vortex-api');
 const winapi = require('winapi-bindings');
 
+/* 
+Ignore the Meshes\AnimTextData\AnimationOffsets\PersistantSubgraphInfoAndOffsetData.txt file as a conflict. 
+It's present in a lot of weapon mods but doesn't matter if it's overwritten. 
+This issue is compounded by users extracting all their BA2s. 
+*/
+const IGNORED_FILES = [ path.join('**', 'PersistantSubgraphInfoAndOffsetData.txt') ];
+
 const MS_ID = 'BethesdaSoftworks.Fallout4-PC';
 function findGame() {
   try {
@@ -86,7 +93,7 @@ function main(context) {
     mergeMods: true,
     queryPath: findGame,
     supportedTools: tools,
-    queryModPath: () => 'data',
+    queryModPath: () => 'Data',
     logo: 'gameart.jpg',
     executable: () => 'Fallout4.exe',
     requiredFiles: [
@@ -98,6 +105,11 @@ function main(context) {
     },
     details: {
       steamAppId: 377160,
+      ignoreConflicts: IGNORED_FILES,
+      hashFiles: [
+        'appxmanifest.xml',
+        'Data/Fallout4.esm',
+      ]
     }
   });
 

@@ -62,7 +62,7 @@ function main(context) {
     mergeMods: true,
     queryPath: findGame,
     supportedTools: tools,
-    queryModPath: () => 'data',
+    queryModPath: () => 'Data',
     logo: 'gameart.jpg',
     executable: () => 'FalloutNV.exe',
     requiredFiles: [
@@ -74,6 +74,10 @@ function main(context) {
     details: {
       steamAppId: 22380,
       nexusPageId: 'newvegas',
+      hashFiles: [
+        'Data/Update.bsa',
+        'Data/FalloutNV.esm',
+      ],
     }
   });
   return true;

@@ -153,7 +153,9 @@ async function installSubModules(files, destinationPath) {
     const modName = (segments.length > 1)
       ? segments[segments.length - 2]
       : subModId;
-
+    if (modName === undefined) {
+      return Promise.reject(new util.DataInvalid('Invalid Submodule.xml file - inform the mod author'));
+    }
     subModIds.push(subModId);
     const idx = modFile.toLowerCase().indexOf(SUBMOD_FILE);
     // Filter the mod files for this specific submodule.
@@ -377,9 +379,9 @@ function tSort(sortProps: ISortProps, test: boolean = false) {
     processing[node] = false;
     visited[node] = true;
 
-    if (!isInvalid(node)) {
-      result.push(node);
-    }
+    // if (!isInvalid(node)) {
+    //   result.push(node);
+    // }
   };
 
   for (const node in graph) {
@@ -694,10 +696,19 @@ function sortImpl(context: types.IExtensionContext, metaManager: ComMetadataMana
     return;
   }
 
+  const getNextAvailable = (accum, idx) => {
+    const entries = Object.values(accum);
+    while (entries.find(entry => (entry as any).pos === idx) !== undefined) {
+      idx++;
+    }
+    return idx;
+  }
   const newOrder = [].concat(sortedLocked, sortedSubMods).reduce((accum, id, idx) => {
     const vortexId = CACHE[id].vortexId;
     const newEntry = {
-      pos: idx,
+      pos: loadOrder[vortexId]?.locked === true
+        ? loadOrder[vortexId].pos
+        : getNextAvailable(accum, idx),
       enabled: CACHE[id].isOfficial
         ? true
         : (!!loadOrder[vortexId])
@@ -822,8 +833,8 @@ function main(context) {
     context.api.onAsync('added-files', async (profileId, files) => {
       const state = context.api.store.getState();
       const profile = selectors.profileById(state, profileId);
-      if (profile.gameId !== GAME_ID) {
-        // don't care about any other games
+      if (profile?.gameId !== GAME_ID) {
+        // don't care about any other games - or if the profile is no longer valid.
         return;
       }
       const game = util.getGame(GAME_ID);

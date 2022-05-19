@@ -30,7 +30,7 @@ import { ModLimitPatcher } from './modLimitPatch';
 import { registerActions } from './iconbarActions';
 import { PriorityManager } from './priorityManager';
 
-import { installMixed, testSupportedMixed } from './installers';
+import { installMixed, testSupportedMixed, installDLCMod, testDLCMod } from './installers';
 import { restoreFromProfile, storeToProfile } from './mergeBackup';
 
 import { getMergedModNames } from './mergeInventoryParsing';
@@ -40,6 +40,8 @@ import { W3Reducer } from './reducers';
 
 const GOG_ID = '1207664663';
 const GOG_ID_GOTY = '1495134320';
+const GOG_WH_ID = '1207664643';
+const GOG_WH_GOTY = '1640424747';
 const STEAM_ID = '499450';
 const STEAM_ID_WH = '292030';
 
@@ -198,7 +200,10 @@ function findGame(): Bluebird<string> {
     }
     return Bluebird.resolve(instPath.value as string);
   } catch (err) {
-    return util.GameStoreHelper.findByAppId([GOG_ID_GOTY, GOG_ID, STEAM_ID, STEAM_ID_WH])
+    return util.GameStoreHelper.findByAppId([
+      GOG_ID_GOTY, GOG_ID, GOG_WH_ID, GOG_WH_GOTY,
+      STEAM_ID, STEAM_ID_WH,
+    ])
       .then(game => game.gamePath);
   }
 }
@@ -1099,6 +1104,7 @@ function main(context: types.IExtensionContext) {
       steamAppId: 292030,
       ignoreConflicts: DO_NOT_DEPLOY,
       ignoreDeploy: DO_NOT_DEPLOY,
+      hashFiles: ['bin/x64/witcher3.exe'],
     },
   });
 
@@ -1129,6 +1135,7 @@ function main(context: types.IExtensionContext) {
     toBlue(testSupportedContent), toBlue(installContent));
   context.registerInstaller('witcher3menumodroot', 20,
     toBlue(testMenuModRoot as any), toBlue(installMenuMod));
+  context.registerInstaller('witcher3dlcmod', 60, testDLCMod as any, installDLCMod as any)
   context.registerInstaller('scriptmergerdummy', 15,
     toBlue(scriptMergerTest), toBlue((files) => scriptMergerDummyInstaller(context, files)));
 
