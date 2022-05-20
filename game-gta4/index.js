@@ -9,6 +9,26 @@ const GAME_ID = 'gta4';
 //Steam Application ID, you can get this from https://steamdb.info/apps/
 const STEAMAPP_ID = '12210';
 const EXEC = "GTAIV.exe"
+const MOD_PATH = '.'
+
+let tools = [
+  {
+    id: 'OpenIV',
+    name: 'OpenIV',
+    //logo: 'openiv.png',
+    executable: () => 'OpenIV.exe',
+    requiredFiles: [
+      'OpenIV.exe',
+    ],
+  }
+];
+
+
+const OPENIV_FILE_EXTS = [ '.oiv', '.wft', '.wtd', '.wad' ];
+
+function requireOpenIV(files) {
+  return files.find(file => OPENIV_FILE_EXTS.includes(path.extname(file))) !== undefined;
+}
 
 function main(context) {
     //This is the main function Vortex will run when detecting the game extension.
@@ -18,8 +38,8 @@ function main(context) {
 		name: 'Grand Theft Auto IV',
 		mergeMods: true,
 		queryPath: findGame,
-		supportedTools: [],
-		queryModPath: () => '.',
+		supportedTools: tools,
+		queryModPath: () => MOD_PATH,
 		logo: 'gameart.jpg',
 		executable: () => EXEC,
 		requiredFiles: [
@@ -33,21 +53,24 @@ function main(context) {
 		  steamAppId: STEAMAPP_ID,
 		},
 	  });
-	context.registerInstaller('gta4-mod', 25, testSupportedContent, installContent);
-
-    return true
+	
+	context.registerInstaller('gta4-mod', 20, testgtaivmod, installgtaivmod);
 }
 
 module.exports = {
     default: main,
 };
 
-async function testSupportedContent(files, gameId) {
-  const supported = (gameId === GAME_ID);
-  return { supported, requiredFiles: [] };
+function testgtaivmod(files, gameId) {
+  const supported = (gameId === GAME_ID) && !requireOpenIV(files);
+  return Promise.resolve({ 
+    supported, 
+	requiredFiles: [] 
+  });
 }
 
-function installContent(files) {
+
+function installgtaivmod(files) {
 
   // Remove directories.
   const filtered = files.filter(file =>
