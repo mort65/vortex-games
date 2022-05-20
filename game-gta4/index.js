@@ -23,6 +23,11 @@ let tools = [
   }
 ];
 
+function isFomod(files) {
+  return files.find(file =>
+      (path.basename(file).toLowerCase() === 'moduleconfig.xml')
+      && (path.basename(path.dirname(file)).toLowerCase() === 'fomod'));
+}
 
 const OPENIV_FILE_EXTS = [ '.oiv', '.wft', '.wtd', '.wad' ];
 
@@ -62,7 +67,7 @@ module.exports = {
 };
 
 function testgtaivmod(files, gameId) {
-  const supported = (gameId === GAME_ID) && !requireOpenIV(files);
+  const supported = (gameId === GAME_ID) && !requireOpenIV(files) && !isFomod(files);
   return Promise.resolve({ 
     supported, 
 	requiredFiles: [] 
