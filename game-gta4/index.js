@@ -1,5 +1,5 @@
 const path = require('path');
-const { fs, log, util } = require('vortex-api');
+const { actions, fs, log, util } = require('vortex-api');
 const winapi = require('winapi-bindings');
 const Promise = require('bluebird');
 
@@ -35,6 +35,22 @@ function requireOpenIV(files) {
   return files.find(file => OPENIV_FILE_EXTS.includes(path.extname(file))) !== undefined;
 }
 
+function openivWarning(requireOpenIV) {
+	//why doesn't show the dialoge?
+	if (requireOpenIV) {
+		log('info', 'Some of the files should be installed with OpenIV');
+		return new Promise((resolve, reject) => {
+			actions.showDialog('info', 'OpenIV Mod', {
+				text: 'Some of the files should be installed with OpenIV',
+			}, [
+				{ label: 'Close', action: () => resolve(undefined) },
+			]);
+		});
+	}
+
+	return Promise.resolve(undefined);
+}
+
 function main(context) {
     //This is the main function Vortex will run when detecting the game extension.
 	
@@ -67,9 +83,19 @@ module.exports = {
 };
 
 function testgtaivmod(files, gameId) {
-  const supported = (gameId === GAME_ID) && !requireOpenIV(files) && !isFomod(files);
+  const requiresOpenIV = requireOpenIV(files);
+  const supported = (gameId === GAME_ID) && !isFomod(files);
+  if (supported) {
+	  try {
+		  openivWarning(requiresOpenIV);
+	  } 
+	  catch(err) {
+		  return Promise.reject(err);
+	  }
+  }
+  const testResult = supported && requiresOpenIV;
   return Promise.resolve({ 
-    supported, 
+    testResult, 
 	requiredFiles: [] 
   });
 }
